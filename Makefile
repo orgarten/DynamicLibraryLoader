@@ -1,2 +1,2 @@
 debug:
-	c++ -Wall -pedantic main.cpp -o main.out
+	c++ -Wall -pedantic -ldl main.cpp -o main.out
