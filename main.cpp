@@ -14,6 +14,36 @@
 // header for dlopen(), dlerror(), ...
 #include <dlfcn.h>
 
+class DynamicFunctionWrapper {
+public:
+    DynamicFunctionWrapper(const std::string &module_name) : mod(module_name), handle(dlopen(mod.c_str(), RTLD_LAZY)) { };
+    ~DynamicFunctionWrapper() { dlclose(handle); };
+    
+    int load_external_symbol(const std::string &symbol){
+        if(!handle)
+            return -1;
+
+        // clear errors
+        dlerror();
+
+        *(void**) (&dyn_print_hello) = dlsym(handle, symbol.c_str());
+        const char* error = dlerror();
+        if(error != NULL) {
+            std::cerr << error << "\n";
+            return -1;
+        }
+        return 0;
+    };
+    void print_hello(const std::string& name)
+    {
+        std::cout << "DynamicFunctionWrapper: ";
+        dyn_print_hello(name);
+    };
+private:
+    const std::string &mod;
+    void* handle;
+    void (*dyn_print_hello)(const std::string&);
+};
 
 int main(int argc, char* argv[]) {
 
@@ -45,8 +75,13 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    auto wrapper = DynamicFunctionWrapper(argv[1]);
+    wrapper.load_external_symbol("print_hello");
+
+
     // use function pointer
     print_hello("Orell");
+    wrapper.print_hello("Orell");
     dlclose(handle);
     return 0;
 }
